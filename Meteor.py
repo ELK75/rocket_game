@@ -4,21 +4,33 @@ import random
 class Meteor():
 
     def __init__(self):
-        self.x = random.randint(100, 300)
-        self.y = 1
+        self.x = random.randint(0, 400)
+        self.y = -40
         self.change_x = random.randint(-5, 5)
         self.change_y = 1
+        self.height = 40
+        self.width = 40
         
     def updateMeteor(self, speed, height, width, rocket, rocketValues):
         self.x += self.change_x
-        self.y += self.change_y + ((speed * 10)/rocket.getMaxVelocity(rocketValues[3],rocketValues[0],rocketValues[2],rocketValues[1]))
+        self.y += self.change_y + 2*(rocket.getHeight()**(1/3))
         if (self.y >= height or self.x >= width or self.x <= 0):
             Meteor.__init__(self)
 
+    def isInsideRocket(rocket, coords):
+        if (coords[0] >= rocket.getPos_x() and coords[0] <= rocket.getPos_x() + rocket.getWidth() and
+            coords[1] >= rocket.getPos_y() and coords[1] <= rocket.getPos_y() + rocket.getLength()):
+                return True
+        return False
+
     def collision(self, rocket):
-        if (rocket.getPos_x() <= self.x and self.x <= rocket.getPos_x() + rocket.getWidth() - 8
-        and rocket.getPos_y() <= self.y and self.y <= rocket.getPos_y() + rocket.getLength()):
-            return True
+        meteor_hit_points = [(self.x, self.y), (self.x + self.width, self.y), 
+            (self.x, self.y + self.height), (self.x + self.width, self.y + self.height),
+            (self.x + self.width / 2, self.y + self.height)]
+        for point in meteor_hit_points:
+            if (Meteor.isInsideRocket(rocket, point)):
+                return True
+
         return False
 
     def getX(self):

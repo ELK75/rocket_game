@@ -4,13 +4,14 @@ import time
 import Rocket
 import Meteor
 import SkyColor
+import Cloud
 from pygame.locals import*
 
 pygame.init()
 
 def SingleColorBar(gameDisplay, color,currentFuel, maxFuel,fuelBarWidth):
     width = int(max(min(currentFuel/float(maxFuel)*fuelBarWidth, fuelBarWidth), 0))
-    pygame.draw.rect(gameDisplay, color, pygame.Rect(100, 475, width, 10), 0)
+    pygame.draw.rect(gameDisplay, color, pygame.Rect(100, 485, width, 10), 0)
 
 def message_to_screen(msg,color):
     screen_text = font.render(msg, True, color)
@@ -30,10 +31,14 @@ gameDisplay = pygame.display.set_mode((display_width,display_height))
 pygame.display.set_caption('Rockets')
 rocket_width = display_width // 16
 rocket_height = display_height // 8
+
 img = pygame.image.load('Rocket.bmp')
+img = pygame.transform.scale(img, (rocket_width, rocket_height))
 meteor_img = pygame.image.load('Meteor.png')
 meteor_img = pygame.transform.scale(meteor_img, (40, 40))
-img = pygame.transform.scale(img, (rocket_width, rocket_height))
+cloud_img = pygame.image.load('cloud.png')
+cloud_img = pygame.transform.scale(cloud_img, (65, 40))
+
 rocket = Rocket.Rocket(display_width/2, display_height - (display_height / 3))
 color = SkyColor.SkyColor()
 FPS = 30
@@ -42,11 +47,14 @@ meteors = [0, 0, 0, 0, 0]
 for meteor in meteors:
     meteor = Meteor.Meteor()
 
+clouds = [0,0,0,0,0,0,0,0,0]
+for x in range(0, 9):
+    clouds[x] = Cloud.Cloud()
+
 pygame.font.init()
 height_font = pygame.font.SysFont("Courier", 20)
 
 text_height = height_font.render("Height: {0}".format(rocket.getHeight()),False,(0,0,0))
-
 
 
 def resetGame(rocket):
@@ -55,7 +63,10 @@ def resetGame(rocket):
     rocket.resetRocket(rocketValues)
     for x in range(0, 5):
         meteors[x] = Meteor.Meteor()
-    
+
+    for x in range(0, 9):
+        clouds[x] = Cloud.Cloud()
+
 from graphics import *
 
 def title():
@@ -73,7 +84,7 @@ def title():
     startMess.setStyle('bold')
     startMess.setSize(24)
     startMess.draw(win)
-    shopMess=Text(Point(295,325),'Shop')
+    shopMess=Text(Point(295,325),'Quit')
     shopMess.setStyle('bold')
     shopMess.setSize(24)
     shopMess.draw(win)
@@ -109,14 +120,14 @@ def gameLoop():
 
         roundOver = False
         x_change = 0
+        print(rocket.getHeight())
         resetGame(rocket)
 
         while not roundOver:
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
-                    userWantsToExit = True
-                    roundOver = True
+                    quit()
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_LEFT:
                         x_change -= rocket.getSteer()
@@ -131,6 +142,18 @@ def gameLoop():
             rocket.updateHeight()
 
             gameDisplay.fill(color.shift(rocket.getHeight()))
+
+            for cloud in clouds:
+                cloud.updateCloud(rocket.getSpeed(), display_height, display_width)
+                gameDisplay.blit(cloud_img,(cloud.getX(), cloud.getY()))
+
+            if not roundOver:
+                for meteor in meteors:
+                    if meteor.collision(rocket):
+                        roundOver = True
+
+                    meteor.updateMeteor(rocket.getSpeed(), display_height, display_width, rocket, rocketValues)
+                    gameDisplay.blit(meteor_img,(meteor.getX(), meteor.getY()))
             #pygame.draw.rect(gameDisplay, (150, 150, 150), pygame.Rect(0, 475, display_width, 200))
 
             gameDisplay.blit(img,(rocket.getPos_x(), rocket.getPos_y()))
@@ -140,20 +163,19 @@ def gameLoop():
                 roundOver = True
                 resetGame(rocket)
                 break
-
-            if not roundOver:
-                for meteor in meteors:
-                    if meteor.collision(rocket):
-                        roundOver = True
-
-                    meteor.updateMeteor(rocket.getSpeed(), display_height, display_width, rocket, rocketValues)
-                    gameDisplay.blit(meteor_img,(meteor.getX(), meteor.getY()))
-
-                    #pygame.display.update()
+                
+            #pygame.display.update()
 
             fuelBarColor = (255 - int(rocket.getFuel()/rocket.getMaxFuel()*255), int(rocket.getFuel()/rocket.getMaxFuel()*255), 0)
-            pygame.draw.rect(gameDisplay, black, pygame.Rect(100, 475, 200, 10), 2)
+            pygame.draw.rect(gameDisplay, black, pygame.Rect(100, 485, 200, 10), 2)
             SingleColorBar(gameDisplay, fuelBarColor, rocket.getFuel(), rocket.getMaxFuel(), 200)
+            myfont = pygame.font.SysFont('Comic Sans', 25)
+            velocity = myfont.render('Curret Velocity : '  + str(int(rocket.getSpeed())) + ' m/s', False, (255,0,0))
+            acceleration = myfont.render('Curret Acceleration : '  + str(int(rocket.getAcceleration())) + ' m/s^2', False, (255,0,0))
+            height = myfont.render('Curret Height : '  + str(int(rocket.getHeight())) + ' m', False, (255,0,0))
+            gameDisplay.blit(height,(display_width/2 - 80, 500))
+            gameDisplay.blit(acceleration,(display_width / 2 - 110,540))
+            gameDisplay.blit(velocity,(display_width / 2 - 85,520))
             pygame.display.update()
 
             text_height = height_font.render('Height: {0}'.format(rocket.getHeight()),False,(0,0,0))
@@ -161,6 +183,7 @@ def gameLoop():
 
             clock.tick(FPS)
         gameOverScreen()
+        print(rocket.getHeight())
         resetGame(rocket)
         print("GAME OVER")
     userWantsToExit = True
@@ -183,13 +206,13 @@ def gameOverScreen():
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                running = False
+                quit()
             
             if event.type == pygame.MOUSEBUTTONDOWN:
                 mouse_pos = event.pos
 
                 if mainMenuButton.collidepoint(mouse_pos):
-                    print("Main Menu Access")
+                    title()
                 if shopButton.collidepoint(mouse_pos):
                     upgradeLevels, rocketValues, tempMoney = shop(rocket.getPoints(),upgradeLevels)
                     rocket.setPoints(tempMoney)
@@ -203,11 +226,12 @@ def gameOverScreen():
         pygame.display.update()
 
 def shop(money, currentUpgrades):
+    money=10**5
     massDecreaseList=[10000,7500,5000,2500,1000,0]
     massFuelList=[1000,2000,4000,8000,16000,32000]
     massHull=[1000,2000,3000,4000,5000,6000]
     fuelEjectSpeed=[500,750,1000,1500,2000,3000]
-    fuelVelocity=[600,900,1200,1500,1800,2100]
+    fuelVelocity=[300,600,900,1200,1500,1800]
     m=massDecreaseList[currentUpgrades[3]]+massFuelList[currentUpgrades[0]]+massHull[currentUpgrades[5]]
     win=GraphWin('Shop',800,500)
     rocketBg=Rectangle(Point(0,100),Point(250,500))
@@ -281,7 +305,10 @@ def shop(money, currentUpgrades):
     priceTextList=[]
     for i in range(2):
         for j in range(3):
-            mess=Text(Point(402+260*i,250+100*j),['$',priceList[currentUpgrades[2*j+i]]])
+            if currentUpgrades[2*j+i]==5:
+                 mess=Text(Point(402+260*i,250+100*j),'Sold Out')
+            else:
+                mess=Text(Point(402+260*i,250+100*j),['$',priceList[currentUpgrades[2*j+i]]])
             mess.setSize(14)
             mess.setFace('courier')
             mess.draw(win)

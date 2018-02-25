@@ -10,7 +10,7 @@ class Rocket():
         self.fuel = self.maxFuel
         self.height = height
         self.weight = weight
-        self.width = 400// 16
+        self.width = 400//16
         self.length = 600//8
         self.points = 0
         self.start_x = pos_x
@@ -20,6 +20,7 @@ class Rocket():
         self.rocketWeight=11000
         self.dmdt=500
         self.hull=0
+        self.acceleration=0
 
     def resetRocket(self,rocketParameters):
         self.speed = 0
@@ -34,6 +35,7 @@ class Rocket():
         self.rocketWeight=rocketParameters[3]
         self.steer=rocketParameters[4]*2
         self.hull=rocketParameters[5]
+        self.acceleration = 0
 
     def updateX(self, changeX):
         self.pos_x += changeX
@@ -42,7 +44,7 @@ class Rocket():
         self.points += 0.1
         self.fuel -= self.dmdt/60
         self.time += 1/60
-        self.speed,self.height= Rocket.physics(self.speed,self.height,self.time,self.rocketWeight,self.maxFuel,self.dmdt,self.Vf)
+        self.speed,self.height,self.acceleration= Rocket.physics(self.speed,self.height,self.time,self.rocketWeight,self.maxFuel,self.dmdt,self.Vf)
         if (self.speed==-10000) and (self.height==-10000):
             print("You can't take off")
 
@@ -85,10 +87,13 @@ class Rocket():
     def addPoints(self, money):
         self.point += money
 
+    def getAcceleration(self):
+        return self.acceleration
+
     def getMaxVelocity(self,Mr,MfS,dmdt,vM):
         v,h,t,a,vmax,hmax,amax=0,0,0,0,0,0,0
         for i in range(10**9):
-            v,h=Rocket.physics(v,h,t,Mr,MfS,dmdt,vM)
+            v,h,a=Rocket.physics(v,h,t,Mr,MfS,dmdt,vM)
             t+=1/60
             if v+h==-20000:
                 if (vmax <= 0):
@@ -137,6 +142,5 @@ class Rocket():
         newV=v+a/60
         h+=newV/60
         if h<=0:
-            print('rip ship')
-            return -10000,-10000
-        return newV,h
+            return -10000,-10000,0
+        return newV,h,a
