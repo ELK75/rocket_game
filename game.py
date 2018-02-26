@@ -108,7 +108,6 @@ def title():
                     win.close()
                     return 'shop'
 
-
 def gameLoop():
 
     userWantsToExit = True
