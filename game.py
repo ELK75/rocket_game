@@ -143,7 +143,7 @@ def gameLoop():
             gameDisplay.fill(color.shift(rocket.getHeight()))
 
             for cloud in clouds:
-                cloud.updateCloud(rocket.getSpeed(), display_height, display_width)
+                cloud.updateCloud(rocket.getSpeed(), display_height, display_width, rocket)
                 gameDisplay.blit(cloud_img,(cloud.getX(), cloud.getY()))
 
             if not roundOver:
